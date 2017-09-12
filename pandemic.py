@@ -8,6 +8,7 @@ import os
 import sys
 import argparse
 import signal
+import pwd
 
 from stat import *
 
@@ -20,10 +21,10 @@ found = False
 def print_usage():
     print("Usage: {} <dir_to_scan>".format(sys.argv[0]))
 
-def print_interesting_file(path, reason):
+def print_interesting_file(path, owner, reason):
     global found
 
-    print("[+] {:30}{}".format(reason, path))
+    print("[+] {:10}\t{:10}\t{}".format(owner.pw_name, reason, path))
     found = True
 
 def analyze_file(path):
@@ -32,7 +33,7 @@ def analyze_file(path):
 
     " Look for ST_UID bit "
     if filemode & S_ISUID != 0:
-        print_interesting_file(path, "ST_UID")
+        print_interesting_file(path, pwd.getpwuid(filestat.st_uid), "ST_UID")
 
 def walk_path(rootdir, exclude_dirs):
     if not os.path.isdir(rootdir):
@@ -65,6 +66,9 @@ def main():
     print("")
 
     signal.signal(signal.SIGINT, signal_handler)
+
+    print("[*] {:10}\t{:10}\t{}".format("user", "reason", "path"))
+    print("")
 
     rootdir = os.path.abspath(sys.argv[1])
     walk_path(rootdir, args.exclude)
