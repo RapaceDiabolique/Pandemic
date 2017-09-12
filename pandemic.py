@@ -48,6 +48,22 @@ def walk_path(rootdir, exclude_dirs):
             except (FileNotFoundError, PermissionError):
                 pass
 
+def analyze_os_release():
+    with open('/proc/version') as f:
+        print("[+] Version: {}".format(f.readline().strip()))
+
+def analyze_linux():
+    def analyzer(func):
+        try:
+            func()
+        except FileNotFoundError as e:
+            print("[-] {} is missing.".format(e.filename))
+        except PermissionError:
+            print("[!] {} is not readable.".format(e.filename))
+            pass
+
+    analyzer(analyze_os_release)
+
 def main():
     global found
 
@@ -59,14 +75,17 @@ def main():
     parser.add_argument("-V", "--version", action="store_true", help="Print version number")
     args = parser.parse_args()
 
+    signal.signal(signal.SIGINT, signal_handler)
+
     print("[+] Pandemic {}.{}.{}".format(pandemic_major, pandemic_minor, pandemic_bug))
     print("[+] Made by the Rapace Diabolique")
     print("")
-    print("Searching from '{}'".format(args.directory))
+
+    analyze_linux()
+
     print("")
-
-    signal.signal(signal.SIGINT, signal_handler)
-
+    print("Searching from '{}':".format(args.directory))
+    print("")
     print("[*] {:10}\t{:10}\t{}".format("user", "reason", "path"))
     print("")
 
